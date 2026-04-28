@@ -1,0 +1,69 @@
+# HCPFiller — Full-Stack Boilerplate Implementation Plan
+
+## Overview
+Production-ready scaffold with **FastAPI + LangGraph** backend and **React + Redux Toolkit + Tailwind CSS** frontend. The AI sidebar communicates with the backend, receives structured JSON from LangGraph tool calls, and auto-populates form fields via Redux dispatch.
+
+## Directory Tree
+
+```
+HCPFiller/
+├── Backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                  ← FastAPI entry point
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   └── v1/
+│   │   │       ├── __init__.py
+│   │   │       └── endpoints/
+│   │   │           ├── __init__.py
+│   │   │           ├── health.py
+│   │   │           └── ai.py        ← AI chat/fill endpoint
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py            ← Pydantic Settings
+│   │   │   ├── database.py          ← SQLAlchemy async engine
+│   │   │   └── exceptions.py
+│   │   ├── schemas/
+│   │   │   ├── __init__.py
+│   │   │   ├── ai.py                ← AI request/response schemas
+│   │   │   └── form.py              ← FormData schema
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   └── ai_service.py        ← Orchestrates LangGraph
+│   │   └── agent/
+│   │       ├── __init__.py
+│   │       ├── graph.py             ← LangGraph StateGraph
+│   │       ├── state.py             ← AgentState TypedDict
+│   │       └── tools/
+│   │           ├── __init__.py
+│   │           └── form_filler.py   ← LangGraph tool: fill_form
+│   ├── .env.template
+│   ├── requirements.txt
+│   └── README.md
+│
+└── Frontend/
+    ├── public/
+    │   └── index.html
+    ├── src/
+    │   ├── main.jsx
+    │   ├── App.jsx
+    │   ├── store/
+    │   │   ├── store.js             ← Redux store configuration
+    │   │   └── slices/
+    │   │       ├── formSlice.js     ← Form fields state
+    │   │       └── aiSlice.js       ← AI chat state
+    │   ├── api/
+    │   │   └── aiApi.js             ← Axios calls to FastAPI
+    │   ├── components/
+    │   │   ├── MainForm.jsx         ← Multi-field form
+    │   │   ├── AIButton.jsx         ← Floating button
+    │   │   └── AISidebar.jsx        ← AI chat sidebar
+    │   └── hooks/
+    │       └── useAI.js             ← Custom hook for AI interactions
+    ├── package.json
+    ├── vite.config.js
+    ├── tailwind.config.js
+    ├── postcss.config.js
+    └── .env.template
+```

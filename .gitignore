@@ -1,0 +1,19 @@
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Project specific
+node_modules/
+__pycache__/
+venv/
+.venv/
+.env
+dist/
+build/
