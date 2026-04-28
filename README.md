@@ -1,94 +1,103 @@
-# HCPFiller - Full-Stack Production Boilerplate
+# HCPFiller - AI-Powered HCP Interaction Logger
 
 ## Overview
-Production-ready scaffold with **FastAPI + LangGraph** backend and **React + Redux Toolkit + Tailwind CSS** frontend. The AI sidebar communicates with the backend, receives structured JSON from LangGraph tool calls, and auto-populates form fields via Redux dispatch.
+Production-ready scaffold with **FastAPI + LangGraph** backend and **React + Redux Toolkit + Tailwind CSS** frontend. The AI Assistant automates data entry by extracting HCP interaction details from natural language chat and populating the form in real-time.
 
-## Directory Tree
+---
+
+## 🛠️ Quick Start (using Makefile)
+
+This project includes a root-level `Makefile` to simplify setup and development.
+
+### 1. Initial Setup
+Run this command once to install all dependencies for both Backend and Frontend.
+```powershell
+make install
+```
+*   **What it does**: Creates a Python virtual environment, installs backend requirements, and runs `npm install` in the Frontend directory.
+
+### 2. Database Initialization
+Ensure your database is ready before starting the app.
+```powershell
+make db-init
+```
+*   **What it does**: Runs the database initialization script to create necessary tables.
+
+### 3. Running the Application
+Start both the backend and frontend concurrently.
+```powershell
+make dev
+```
+*   **When to use**: Use this for standard daily development. It opens two terminal windows running the FastAPI server and the Vite dev server.
+
+### 4. Granular Commands
+Run frontend backend one by one
+*   **Backend Only**: `make dev-backend`
+*   **Frontend Only**: `make dev-frontend`
+*   **Clean Up**: `make clean` (Removes `__pycache__` and temporary files)
+
+---
+
+## 🧠 AI Features & Agent Tools
+
+The AI Assistant is powered by a **LangGraph** agent that has access to a specialized suite of tools for managing HCP interactions.
+
+### 🛠️ Available Agent Tools:
+
+1.  **`upsert_form_draft`**: 
+    *   **Purpose**: Extracts partial data from chat and populates the frontend form in real-time.
+    *   **Behavior**: Creates a new session ID if none exists, or updates the current draft. It enables the "live-sync" feel between chat and form.
+
+2.  **`save_interaction_to_db`**: 
+    *   **Purpose**: Finalizes the interaction and saves it to the permanent database.
+    *   **Behavior**: Triggered when the AI detects the user wants to "submit" or "finalize" the log. It ensures all mandatory fields are captured.
+
+3.  **`list_recent_interactions`**: 
+    *   **Purpose**: Retrieves the 10 most recent logs from the database.
+    *   **Behavior**: Returns a formatted table in the chat, allowing users to quickly see their recent activity.
+
+4.  **`load_interaction_detail`**: 
+    *   **Purpose**: Pulls all fields of a specific historical interaction back into the form.
+    *   **Behavior**: Used when a user says "Show me the details of the meeting with Dr. Smith" or provides a specific Interaction ID.
+
+5.  **`search_interactions`**: 
+    *   **Purpose**: Filters historical logs based on criteria like **Sentiment** or **Date**.
+    *   **Behavior**: Helps users find specific past interactions (e.g., "Find all negative sentiment meetings from last week").
+
+6.  **`analyze_sentiment_and_topics`**: 
+    *   **Purpose**: An internal analysis tool that provides suggestions for the "Sentiment" and "Topics" fields based on the tone of the user's description.
+
+---
+
+### 🌟 Advanced AI Capabilities
+*   **Persistent Context**: The AI remembers which interaction you are working on using `session_id`, allowing for multi-turn corrections.
+*   **Automatic Upserts**: When the AI extracts data, it smartly updates existing records rather than creating duplicates.
+*   **Table Rendering**: Data lists (like search results) are automatically rendered as clean, high-contrast tables in the chat window.
+
+---
+
+## 🏗️ Directory Structure
 
 ```
 HCPFiller/
-├── Backend/
+├── Backend/          ← FastAPI + LangGraph Agent
 │   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py                  ← FastAPI entry point
-│   │   ├── api/
-│   │   │   ├── __init__.py
-│   │   │   └── v1/
-│   │   │       ├── __init__.py
-│   │   │       └── endpoints/
-│   │   │           ├── __init__.py
-│   │   │           ├── health.py
-│   │   │           └── ai.py        ← AI chat/fill endpoint
-│   │   ├── core/
-│   │   │   ├── __init__.py
-│   │   │   ├── config.py            ← Pydantic Settings
-│   │   │   ├── database.py          ← SQLAlchemy async engine
-│   │   │   └── exceptions.py
-│   │   ├── schemas/
-│   │   │   ├── __init__.py
-│   │   │   ├── ai.py                ← AI request/response schemas
-│   │   │   └── form.py              ← FormData schema
-│   │   ├── services/
-│   │   │   ├── __init__.py
-│   │   │   └── ai_service.py        ← Orchestrates LangGraph
-│   │   └── agent/
-│   │       ├── __init__.py
-│   │       ├── graph.py             ← LangGraph StateGraph
-│   │       ├── state.py             ← AgentState TypedDict
-│   │       └── tools/
-│   │           ├── __init__.py
-│   │           └── form_filler.py   ← LangGraph tool: fill_form
-│   ├── .env.template
-│   ├── requirements.txt
-│   └── README.md
-│
-└── Frontend/
-    ├── public/
-    │   └── index.html
-    ├── src/
-    │   ├── main.jsx
-    │   ├── App.jsx
-    │   ├── store/
-    │   │   ├── store.js             ← Redux store configuration
-    │   │   └── slices/
-    │   │       ├── formSlice.js     ← Form fields state
-    │   │       └── aiSlice.js       ← AI chat state
-    │   ├── api/
-    │   │   └── aiApi.js             ← Axios calls to FastAPI
-    │   ├── components/
-    │   │   ├── MainForm.jsx         ← Multi-field form
-    │   │   ├── AIButton.jsx         ← Floating button
-    │   │   └── AISidebar.jsx        ← AI chat sidebar
-    │   └── hooks/
-    │       └── useAI.js             ← Custom hook for AI interactions
-    ├── package.json
-    ├── vite.config.js
-    ├── tailwind.config.js
-    ├── postcss.config.js
-    └── .env.template
+│   │   ├── agent/    ← LangGraph Logic & Tools
+│   │   ├── api/      ← Endpoints (AI, Interactions, Health)
+│   │   ├── models/   ← SQLModel Database Models
+│   │   └── services/ ← AI Business Logic
+├── Frontend/         ← React + Redux + Tailwind
+│   ├── src/
+│   │   ├── store/    ← Redux Toolkit Slices
+│   │   ├── components/ ← Premium UI Components
+│   │   └── api/      ← Backend API Integration
+└── Makefile          ← Unified Project Commands
 ```
 
-
-## 🚀 Getting Started
-
-### 1. Backend Setup
-1. `cd Backend`
-2. Create a virtual environment: `python -m venv venv`
-3. Activate it: `venv\Scripts\activate` (Windows)
-4. Install dependencies: `pip install -r requirements.txt`
-5. Copy `.env.template` to `.env` and add your `GROQ_API_KEY`.
-6. Run the server: `python -m app.main` (or `uvicorn app.main:app --reload`)
-
-### 2. Frontend Setup
-1. `cd Frontend`
-2. Install dependencies: `npm install`
-3. Start the dev server: `npm run dev`
-4. Open `http://localhost:5173`
-
-## 🧠 AI Integration
-The AI Assistant in the sidebar uses **LangGraph** to process user messages. When it detects form-related information, it triggers the `fill_form` tool, which returns structured JSON. The frontend Redux store catches this and automatically populates the corresponding form fields.
+---
 
 ## 🛠️ Tech Stack
-- **Backend**: FastAPI, LangGraph, Pydantic v2, SQLModel, SQLAlchemy.
-- **Frontend**: React, Redux Toolkit, Vite, Tailwind CSS.
-- **AI**: Groq (Llama 3 70B).
+- **Backend**: FastAPI, LangGraph, SQLModel, Pydantic v2.
+- **Frontend**: React, Redux Toolkit, Vite, Tailwind CSS (Pure Utilities).
+- **AI**: Groq (Llama 3) for high-speed extraction.
+- **Database**: SQLite (Development) / PostgreSQL (Production ready).
