@@ -16,9 +16,11 @@ class AgentState(TypedDict):
         messages: Accumulated conversation messages (managed by add_messages reducer).
         form_updates: Structured field updates extracted by the fill_form tool.
         session_id: Optional identifier to track multi-turn conversations.
+        interaction_id: Current interaction ID being edited.
         current_date: To help LLM resolve "today", "yesterday", etc.
     """
     messages: Annotated[list[BaseMessage], add_messages]
     form_updates: list[dict]   # list of {"field": str, "value": str}
     session_id: str | None
+    interaction_id: str | None
     current_date: str | None

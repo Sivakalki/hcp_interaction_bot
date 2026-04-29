@@ -14,7 +14,7 @@ def create_app() -> FastAPI:
     setup_logging()
     
     # Initialize DB tables
-    init_db()
+    # init_db()
     
     settings = get_settings()
     app = FastAPI(

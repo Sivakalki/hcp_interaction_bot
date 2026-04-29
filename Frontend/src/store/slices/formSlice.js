@@ -13,6 +13,10 @@ const initialState = {
   sentiment: 'Neutral', // Default
   outcomes: '',
   follow_up_actions: '',
+  summary: '',
+  dos: [],
+  donts: [],
+  future_tasks: [],
   status: 'Draft',
 };
 
@@ -40,6 +44,16 @@ const formSlice = createSlice({
     },
     populateFromAI: (state, action) => {
       const updates = action.payload; // Array of { field, value }
+      
+      // Check for reset action
+      const shouldReset = updates.some(u => u.field === 'action' && u.value === 'reset');
+      if (shouldReset) {
+        // Reset to initial state (excluding constants if any, but here it's all fields)
+        Object.keys(initialState).forEach(key => {
+          state[key] = initialState[key];
+        });
+      }
+
       updates.forEach(({ field, value }) => {
         if (field in state) {
           state[field] = value;

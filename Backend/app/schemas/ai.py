@@ -15,6 +15,8 @@ class AIChatRequest(BaseModel):
     """Request body for POST /api/v1/ai/chat."""
     messages: list[ChatMessage] = Field(..., min_length=1)
     session_id: str | None = Field(default=None, description="Optional session ID for continuity")
+    interaction_id: str | None = Field(default=None, description="Current interaction ID being edited")
+    form_data: dict[str, Any] | None = Field(default=None, description="Current state of the form fields")
 
 
 class FormFieldUpdate(BaseModel):

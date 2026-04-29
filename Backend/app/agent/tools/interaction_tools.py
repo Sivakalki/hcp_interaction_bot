@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import date, datetime
 from typing import Optional, List, Dict, Any
 from langchain_core.tools import tool
 from sqlmodel import Session, select
@@ -11,15 +12,51 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 @tool
-def upsert_form_draft(fields_json: str, interaction_id: Optional[str] = None) -> str:
+def upsert_form_draft(
+    hcp_name: Optional[str] = None,
+    interaction_type: Optional[str] = None,
+    interaction_date: Optional[str] = None,
+    interaction_time: Optional[str] = None,
+    attendees: Optional[List[str]] = None,
+    topics_discussed: Optional[str] = None,
+    materials_shared: Optional[List[str]] = None,
+    samples_distributed: Optional[List[str]] = None,
+    sentiment: Optional[str] = None,
+    outcomes: Optional[str] = None,
+    follow_up_actions: Optional[str] = None,
+    summary: Optional[str] = None,
+    dos: Optional[List[str]] = None,
+    donts: Optional[List[str]] = None,
+    future_tasks: Optional[List[str]] = None,
+    interaction_id: Optional[str] = None
+) -> str:
     """
     Update or create a local draft of the HCP interaction form.
-    fields_json: A JSON string containing partial form fields.
-    interaction_id: Optional existing ID to update.
+    Pass only the fields that need updating.
     """
     logger.debug(f"upsert_form_draft called with ID: {interaction_id}")
     try:
-        updates = json.loads(fields_json)
+        # Filter out None values to only include provided updates
+        updates = {
+            k: v for k, v in {
+                "hcp_name": hcp_name,
+                "interaction_type": interaction_type,
+                "interaction_date": interaction_date,
+                "interaction_time": interaction_time,
+                "attendees": attendees,
+                "topics_discussed": topics_discussed,
+                "materials_shared": materials_shared,
+                "samples_distributed": samples_distributed,
+                "sentiment": sentiment,
+                "outcomes": outcomes,
+                "follow_up_actions": follow_up_actions,
+                "summary": summary,
+                "dos": dos,
+                "donts": donts,
+                "future_tasks": future_tasks,
+            }.items() if v is not None
+        }
+        
         return json.dumps({
             "status": "draft_updated",
             "interaction_id": interaction_id or str(uuid.uuid4()),
@@ -30,22 +67,55 @@ def upsert_form_draft(fields_json: str, interaction_id: Optional[str] = None) ->
         return json.dumps({"status": "error", "message": str(e)})
 
 @tool
-def save_interaction_to_db(interaction_json: str) -> str:
+def save_interaction_to_db(
+    hcp_name: str,
+    interaction_type: Optional[str] = "Meeting",
+    interaction_date: Optional[str] = None,
+    interaction_time: Optional[str] = None,
+    attendees: Optional[List[str]] = None,
+    topics_discussed: Optional[str] = None,
+    materials_shared: Optional[List[str]] = None,
+    samples_distributed: Optional[List[str]] = None,
+    sentiment: Optional[str] = "Neutral",
+    outcomes: Optional[str] = None,
+    follow_up_actions: Optional[str] = None,
+    summary: Optional[str] = None,
+    dos: Optional[List[str]] = None,
+    donts: Optional[List[str]] = None,
+    future_tasks: Optional[List[str]] = None,
+    interaction_id: Optional[str] = None
+) -> str:
     """
     Finalizes and saves the interaction log to the database.
-    interaction_json: Full JSON representation of the interaction.
+    Pass all fields individually. interaction_id is optional if updating.
     """
-    logger.info("save_interaction_to_db called")
+    logger.info(f"save_interaction_to_db called for HCP: {hcp_name}")
     try:
-        data = json.loads(interaction_json)
-        data["status"] = "Submitted"
+        data = {
+            "hcp_name": hcp_name,
+            "interaction_type": interaction_type or "Meeting",
+            "interaction_date": interaction_date or str(date.today()),
+            "interaction_time": interaction_time or datetime.now().strftime("%H:%M"),
+            "attendees": attendees or [],
+            "topics_discussed": topics_discussed or "",
+            "materials_shared": materials_shared or [],
+            "samples_distributed": samples_distributed or [],
+            "sentiment": sentiment or "Neutral",
+            "outcomes": outcomes or "",
+            "follow_up_actions": follow_up_actions or "",
+            "summary": summary or "",
+            "dos": dos or [],
+            "donts": donts or [],
+            "future_tasks": future_tasks or [],
+            "status": "Submitted"
+        }
         
         with Session(engine) as session:
-            interaction_id = data.get("id") or data.get("interaction_id")
-            if interaction_id:
-                db_item = session.get(HCPInteraction, uuid.UUID(interaction_id))
+            target_id = interaction_id
+            if target_id:
+                db_item = session.get(HCPInteraction, uuid.UUID(target_id))
                 if db_item:
-                    logger.debug(f"Updating existing interaction: {interaction_id}")
+                    logger.debug(f"Updating existing interaction: {target_id}")
                     for key, value in data.items():
                         if hasattr(db_item, key):
                             setattr(db_item, key, value)
@@ -125,12 +195,69 @@ def search_interactions(sentiment: Optional[str] = None, interaction_date: Optio
         return json.dumps({"status": "error", "message": str(e)})
 
 @tool
-def analyze_sentiment_and_topics(text: str) -> str:
+def analyze_interaction(text: str) -> str:
     """
-    Internal tool to analyze the user's input for sentiment and key topics.
+    Analyzes the interaction text to extract sentiment, topics, and a structured summary 
+    including recommended actions (dos), what to avoid (donts), and future tasks.
     """
-    logger.debug("analyze_sentiment_and_topics called")
+    logger.debug("analyze_interaction called")
+    # For now, this returns a structured response that the agent can use to suggest form updates.
+    # In a production environment, this would call a specialized analysis model.
     return json.dumps({
-        "sentiment_suggestion": "Positive",
-        "topics_extracted": ["Product Discussion", "Research Collaboration"]
+        "sentiment": "Positive",
+        "topics": ["Product Discussion", "Research Collaboration"],
+        "summary": "The interaction was professional and focused on potential research synergy.",
+        "dos": ["Provide follow-up technical documentation", "Clarify timeline for next phase"],
+        "donts": ["Do not mention pricing at this early stage", "Avoid over-promising on delivery dates"],
+        "future_tasks": ["Send research whitepaper", "Coordinate with the medical affairs team"]
     })
+
+@tool
+def reset_current_form() -> str:
+    """
+    Clears all fields in the current local draft and generates a new interaction ID.
+    Use this if the user wants to start a completely new log.
+    """
+    logger.info("reset_current_form called")
+    return json.dumps({
+        "status": "reset", 
+        "interaction_id": str(uuid.uuid4()), 
+        "message": "Form cleared."
+    })
+
+@tool
+def validate_and_compare_fields(proposed_updates: str, current_fields: str) -> str:
+    """
+    Compares AI-extracted fields with existing form data to detect 
+    contradictions before updating the draft.
+    proposed_updates: JSON string of new field values.
+    current_fields: JSON string of existing form data.
+    """
+    logger.info("validate_and_compare_fields called")
+    try:
+        proposed = json.loads(proposed_updates)
+        current = json.loads(current_fields)
+        
+        conflicts = []
+        for key, new_val in proposed.items():
+            if key in current and current[key]:
+                old_val = current[key]
+                # Simple equality check for strings/numbers/bools
+                # For lists, check if the new list is completely different or just adding?
+                # Usually, we want to flag if a field is being OVERWRITTEN with a DIFFERENT value.
+                if old_val != new_val:
+                    # Special check for lists to see if it's a subset or extension
+                    if isinstance(old_val, list) and isinstance(new_val, list):
+                        if not all(item in new_val for item in old_val):
+                            conflicts.append(key)
+                    else:
+                        conflicts.append(key)
+        
+        if conflicts:
+            logger.warning(f"Conflicts detected in fields: {conflicts}")
+            return json.dumps({"status": "review_required", "conflicts": conflicts})
+        
+        return json.dumps({"status": "validated", "message": "No major contradictions found."})
+    except Exception as e:
+        logger.error(f"Error in validate_and_compare_fields: {e}")
+        return json.dumps({"status": "error", "message": str(e)})

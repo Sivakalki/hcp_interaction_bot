@@ -33,4 +33,9 @@ async def chat(request: AIChatRequest) -> AIChatResponse:
         return response
     except Exception as e:
         logger.error(f"AI Chat failed: {e}")
-        raise HTTPException(status_code=500, detail="AI Service Error")
+        # Extract the most meaningful part of the error message
+        error_detail = str(e)
+        if "BadRequestError" in error_detail or "400" in error_detail:
+            error_detail = "AI Tool call validation failed. Please check the input format."
+        
+        raise HTTPException(status_code=500, detail=f"AI Service Error: {error_detail}")

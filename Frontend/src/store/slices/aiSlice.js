@@ -7,11 +7,16 @@ export const sendMessage = createAsyncThunk(
   async ({ content, sessionId }, { getState, dispatch, rejectWithValue }) => {
     try {
       const state = getState();
+      const interaction_id = state.form.interaction_id;
+      const formData = state.form;
+      
       const currentMessage = { role: 'user', content };
       
       const response = await chatWithAI({ 
         messages: [currentMessage], 
-        session_id: sessionId 
+        session_id: sessionId,
+        interaction_id: interaction_id,
+        form_data: formData
       });
       
       // If the AI returned form updates, dispatch them to the form slice

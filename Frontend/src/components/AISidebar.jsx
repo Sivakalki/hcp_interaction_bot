@@ -152,7 +152,7 @@ const AISidebar = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
             placeholder="Type details..."
-            className="w-full bg-slate-950/80 border border-white/5 group-focus-within:border-blue-500/50 rounded-[20px] px-5 py-4 text-xs text-white placeholder:text-slate-600 focus:outline-none transition-all duration-500 pr-16 min-h-[60px] max-h-[200px]"
+            className="w-full bg-slate-950/80 border border-white/5 group-focus-within:border-blue-500/50 rounded-[20px] px-5 py-4 text-xs text-white placeholder:text-slate-600 focus:outline-none transition-all duration-500 pr-16 min-h-[60px] max-h-[200px] scrollbar-hide"
             rows={1}
             style={{ resize: 'none' }}
           />

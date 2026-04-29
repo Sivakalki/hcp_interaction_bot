@@ -175,7 +175,7 @@ const MainForm = () => {
           </div>
         </div>
 
-        {/* Row 7: Outcomes & Actions */}
+        {/* Row 10: Outcomes & Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
             <label className={labelStyle}>Outcomes</label>

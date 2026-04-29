@@ -25,8 +25,10 @@ from app.agent.tools.interaction_tools import (
     save_interaction_to_db,
     list_recent_interactions,
     load_interaction_detail,
-    analyze_sentiment_and_topics,
+    analyze_interaction,
     search_interactions,
+    reset_current_form,
+    validate_and_compare_fields,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,8 +40,10 @@ TOOLS = [
     save_interaction_to_db,
     list_recent_interactions,
     load_interaction_detail,
-    analyze_sentiment_and_topics,
+    analyze_interaction,
     search_interactions,
+    reset_current_form,
+    validate_and_compare_fields,
 ]
 
 # ── LLM with tool binding ──────────────────────────────────────────────────────
@@ -96,6 +100,19 @@ def harvest_form_updates(state: AgentState) -> dict:
                             form_updates.append({"field": "interaction_id", "value": v})
                         else:
                             form_updates.append({"field": k, "value": v})
+                elif msg.name == "reset_current_form" and result.get("status") == "reset":
+                    # Signal reset by sending a special update or just clearing everything
+                    # For now, let's just send the new interaction_id and a 'reset' flag
+                    form_updates.append({"field": "action", "value": "reset"})
+                    form_updates.append({"field": "interaction_id", "value": result["interaction_id"]})
+                elif msg.name == "save_interaction_to_db" and result.get("status") == "saved":
+                    # Pass back the 'Submitted' status and the ID
+                    form_updates.append({"field": "status", "value": "Submitted"})
+                    if "id" in result:
+                        form_updates.append({"field": "interaction_id", "value": result["id"]})
+                elif msg.name == "validate_and_compare_fields":
+                    # Handle validation results if needed
+                    pass
             except Exception:
                 continue
 
